@@ -1,0 +1,94 @@
+/* Custom overloads and animations for Tailwind CSS design */
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    /* slate-700 */
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+    /* slate-600 */
+}
+
+/* Base custom classes referenced by JS */
+.hidden {
+    display: none !important;
+}
+
+/* Toast animations */
+.toast.show {
+    transform: translateY(0) !important;
+    opacity: 1 !important;
+}
+
+.toast.success {
+    border-left-color: #34d399;
+    /* emerald-400 */
+    color: #a7f3d0;
+    /* emerald-200 */
+    background: rgba(6, 78, 59, 0.95);
+    /* emerald-900 */
+}
+
+.toast.error {
+    border-left-color: #f87171;
+    /* red-400 */
+    color: #fecaca;
+    /* red-200 */
+    background: rgba(69, 10, 10, 0.95);
+    /* red-900 */
+}
+
+/* Pulse animation for the scan button */
+.pulse {
+    animation: custom-pulse 2s infinite;
+}
+
+@keyframes custom-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 12px rgba(59, 130, 246, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+}
+
+/* Face scanning overlay animation */
+.scanning-lines {
+    background: linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.4) 50%, transparent);
+    background-size: 100% 200%;
+    animation: scan 1.5s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes scan {
+    0% {
+        background-position: 0 -100%;
+    }
+
+    100% {
+        background-position: 0 100%;
+    }
+}
+
+/* Make action buttons for students table clean */
+.action-btn {
+    transition: all 0.2s;
+    background: transparent;
+}

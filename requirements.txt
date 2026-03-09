@@ -1,0 +1,6 @@
+flask
+ultralytics
+opencv-contrib-python
+numpy
+werkzeug
+requests
