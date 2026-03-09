@@ -71,8 +71,9 @@ def register_face():
                 face_roi = img[y1:y2, x1:x2]
                 if face_roi.shape[0] > 0 and face_roi.shape[1] > 0:
                     gray = cv2.cvtColor(face_roi, cv2.COLOR_BGR2GRAY)
-                    # Standardize size for LBPH
+                    # Standardize image prep for LBPH
                     gray = cv2.resize(gray, (200, 200))
+                    gray = cv2.equalizeHist(gray)
                     cv2.imwrite(os.path.join(person_folder, f"face_{len(os.listdir(person_folder))}.jpg"), gray)
                     saved_count += 1
                     found = True
@@ -113,13 +114,15 @@ def mark_attendance():
             
             if face_roi.shape[0] > 0 and face_roi.shape[1] > 0:
                 gray = cv2.cvtColor(face_roi, cv2.COLOR_BGR2GRAY)
-                # Standardize size for prediction
+                # Match preprocessing used during training
                 gray = cv2.resize(gray, (200, 200))
+                gray = cv2.equalizeHist(gray)
                 try:
                     id_, confidence = recognizer.predict(gray)
                     print(f"Prediction ID: {id_}, Confidence: {confidence}")
-                    # LBPH distance: lower is better. Very strict matching required.
-                    if confidence < 45: 
+                    # LBPH distance: lower is better.
+                    # Slightly relaxed threshold improves real-world matching.
+                    if confidence < 65:
                         name = name_map.get(id_, "Unknown")
                         if name != "Unknown":
                             mark_csv_attendance(str(id_), name)

@@ -22,13 +22,69 @@ def get_face_detector():
         
     return (yolo_model, haar_cascade)
 
+def _largest_face_box(boxes):
+    if not boxes:
+        return []
+    best_face = None
+    max_face_area = 0
+    for (fx, fy, fw, fh) in boxes:
+        area = fw * fh
+        if area > max_face_area:
+            max_face_area = area
+            best_face = (fx, fy, fw, fh)
+    return [best_face] if best_face is not None else []
+
+def _detect_faces_yolo(frame, yolo_model):
+    if yolo_model is None:
+        return []
+    try:
+        results = yolo_model(frame, verbose=False)
+    except Exception as e:
+        print(f"YOLO inference error: {e}")
+        return []
+
+    yolo_faces = []
+    for result in results:
+        names = result.names if hasattr(result, "names") else {}
+        # Some face models are single-class detectors and may not expose a "face" label
+        # in exactly the expected format. Treat single-class outputs as face detections.
+        single_class_model = isinstance(names, dict) and len(names) == 1
+        boxes = result.boxes
+        if boxes is None:
+            continue
+        for box in boxes:
+            cls_idx = int(box.cls.item()) if box.cls is not None else -1
+            label = str(names.get(cls_idx, "")).lower()
+            # Trust explicit "face" labels, or any class from a single-class model.
+            if not (single_class_model or ("face" in label)):
+                continue
+
+            conf = float(box.conf.item()) if box.conf is not None else 0.0
+            if conf < 0.20:
+                continue
+
+            x1, y1, x2, y2 = box.xyxy[0].tolist()
+            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+            w, h = x2 - x1, y2 - y1
+            if w > 0 and h > 0:
+                yolo_faces.append((x1, y1, w, h))
+
+    return _largest_face_box(yolo_faces)
+
 def detect_faces(frame, detectors):
     """
-    Detects exactly ONE face by finding the largest face via Haar Cascade.
+    Detects exactly ONE face by finding the largest face.
+    Uses YOLO first (when it predicts a 'face' class), then falls back to Haar.
     Returns a list of bounding boxes (x, y, w, h). If zero, returns [].
     """
-    _, haar_cascade = detectors
+    yolo_model, haar_cascade = detectors
+
+    # 1) YOLO face detection first.
+    yolo_faces = _detect_faces_yolo(frame, yolo_model)
+    if yolo_faces:
+        return yolo_faces
     
+    # 2) Haar fallback.
     if haar_cascade is None:
         return []
         
@@ -45,21 +101,8 @@ def detect_faces(frame, detectors):
     
     if len(faces) == 0:
         return []
-        
-    # We only want ONE face. Find the largest face in the frame
-    best_face = None
-    max_face_area = 0
-    
-    for (fx, fy, fw, fh) in faces:
-        area = fw * fh
-        if area > max_face_area:
-            max_face_area = area
-            best_face = (fx, fy, fw, fh)
-            
-    if best_face is None:
-        return []
-        
-    return [best_face]
+
+    return _largest_face_box(faces)
 
 def train_recognizer(faces_dir):
     """
