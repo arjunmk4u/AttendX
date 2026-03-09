@@ -15,6 +15,9 @@ DATA_DIR = 'data'
 FACES_DIR = os.path.join(DATA_DIR, 'faces')
 ATTENDANCE_FILE = os.path.join(DATA_DIR, 'attendance.csv')
 
+# Face Detection Config
+USE_HAAR_FALLBACK = True
+
 os.makedirs(FACES_DIR, exist_ok=True)
 if not os.path.exists(ATTENDANCE_FILE):
     with open(ATTENDANCE_FILE, 'w', newline='') as f:
@@ -61,8 +64,11 @@ def register_face():
     saved_count = 0
     for idx, b64 in enumerate(images_b64):
         img = decode_base64_image(b64)
+        if img is None:
+            continue
+            
         if face_detector:
-            faces = detect_faces(img, face_detector)
+            faces = detect_faces(img, face_detector, use_haar_fallback=USE_HAAR_FALLBACK)
             found = False
             for (face_x, face_y, face_w, face_h) in faces:
                 x1, y1 = face_x, face_y
@@ -101,8 +107,11 @@ def mark_attendance():
         return jsonify({'success': False, 'message': 'No faces registered in the system yet.'}), 400
 
     img = decode_base64_image(image_b64)
+    if img is None:
+        return jsonify({'success': False, 'message': 'Invalid image data.'}), 400
+        
     if face_detector:
-        faces = detect_faces(img, face_detector)
+        faces = detect_faces(img, face_detector, use_haar_fallback=USE_HAAR_FALLBACK)
         face_detected = len(faces) > 0
         
         for (face_x, face_y, face_w, face_h) in faces:

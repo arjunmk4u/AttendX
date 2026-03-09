@@ -15,7 +15,7 @@ def get_face_detector():
     haar_cascade = cv2.CascadeClassifier(cascade_path)
     
     try:
-        yolo_model = YOLO("yolov8n.pt")
+        yolo_model = YOLO("yolov8n-face.pt")
     except Exception as e:
         print(f"Error loading YOLO: {e}")
         yolo_model = None
@@ -23,7 +23,7 @@ def get_face_detector():
     return (yolo_model, haar_cascade)
 
 def _largest_face_box(boxes):
-    if not boxes:
+    if len(boxes) == 0:
         return []
     best_face = None
     max_face_area = 0
@@ -71,7 +71,7 @@ def _detect_faces_yolo(frame, yolo_model):
 
     return _largest_face_box(yolo_faces)
 
-def detect_faces(frame, detectors):
+def detect_faces(frame, detectors, use_haar_fallback=True):
     """
     Detects exactly ONE face by finding the largest face.
     Uses YOLO first (when it predicts a 'face' class), then falls back to Haar.
@@ -85,7 +85,7 @@ def detect_faces(frame, detectors):
         return yolo_faces
     
     # 2) Haar fallback.
-    if haar_cascade is None:
+    if not use_haar_fallback or haar_cascade is None:
         return []
         
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
